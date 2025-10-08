@@ -33,7 +33,8 @@ struct Vehicle {
 //Main Function
 int main(void) {
 	// reading from file
-	std::ifstream file("index.txt");
+	std::string chosen_file = "index.txt";
+	std::ifstream file(chosen_file);
 	if (!file) {
 		std::cerr << "Error opening file.\n";
 		return 1;
@@ -66,7 +67,7 @@ int main(void) {
 		customers.emplace_back(id, x, y, demand, ready, due, service);
 	}
 
-	std::cout << customers.size() << "customers has been loaded" << std::endl;
+	std::cout << customers.size() << " customers has been loaded." << std::endl;
 	
 	return 0;
 }
