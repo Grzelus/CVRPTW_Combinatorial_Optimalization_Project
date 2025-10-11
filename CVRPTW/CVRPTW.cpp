@@ -3,6 +3,9 @@
 #include <string>
 #include <vector>
 
+
+#include "my_functions_classes.h"
+
 struct Customer {
 	int id;
 
@@ -68,6 +71,7 @@ int main(void) {
 	}
 
 	std::cout << customers.size() << " customers has been loaded." << std::endl;
-	
+
+
 	return 0;
 }
