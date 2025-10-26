@@ -23,6 +23,8 @@ struct Saving {
     Saving(int i, int j, double v) : i_index(i), j_index(j), value(v) {}
 };
 
+
+
 double euclidean_distance(const Customer& a, const Customer& b) {
     return std::sqrt((a.x - b.x) * (a.x - b.x) + (a.y - b.y) * (a.y - b.y));
 }
@@ -58,6 +60,15 @@ std::pair<bool, double> route_feasible_and_cost(
     return { true, cost };
 }
 
+
+class Move{
+    public:
+        std::string type;
+        int a,b, route1 ,route2;
+        Move(std::string o_type, int x, int routex, int y,int routey): type(o_type), a(x),b(y), route1(routex),route2(routex) {};
+};
+
+
 int main(int argc, char** argv) {
     std::string file_name = (argc > 1) ? argv[1] : "index.txt";
     std::ifstream file(file_name);
@@ -65,13 +76,13 @@ int main(int argc, char** argv) {
         std::cerr << "Error opening file.\n";
         return 1;
     }
-
+    // getting data
     double amount, capacity;
     std::string skip_line;
     for (int i = 0; i < 2; i++) std::getline(file, skip_line);
     file >> amount >> capacity;
     for (int i = 0; i < 5; i++) std::getline(file, skip_line);
-
+    //matrix of customers
     std::vector<Customer> customers;
     int id, demand;
     double x, y, ready, due, service;
@@ -166,6 +177,44 @@ int main(int argc, char** argv) {
         total_cost += fc.second;
     }
 
+    //tabu search
+    int start_time=time(NULL);
+    std::vector<Move> Tabu;
+    std::vector<Route> best_solution = routes;
+    std::vector<Route> actual_solution = routes;
+    //maksymalnie 5 min wykonywania
+    while(time(NULL)-start_time<300){
+        std::vector<Move>list_of_moves;
+
+        //generating list of possible moves
+        for (int route1=0;route1<actual_solution.size();route1++){ 
+            for (int i=0;i<actual_solution[route1].load;i++)
+            {
+                for (int route2=0;route2<actual_solution.size();route2++){ 
+                    for (int j=0;j<actual_solution[route2].load;j++)
+                    {   
+                        //swap move
+                        std::vector<Route>routes_for_tests = actual_solution;
+                        std::swap(routes_for_tests[route1].sequence[i],routes_for_tests[route2].sequence[j]);
+                        bool x, int cost = route_feasible_and_cost(routes_for_tests );// co dokladnie ta funckja robi????
+                        if(x){
+                            list_of_moves.push_back(Move("swap",i, route1,j,route2, cost));
+                        }
+                        routes_for_tests=actual_solution;
+                            //insertion
+                            routes_for_tests[route1].sequence.erase(routes_for_tests.begin() + i);
+                            routes_for_tests[route1].sequence.insert(routes_for_tests.begin() + i);
+
+                    }
+                }
+            }        
+        }
+
+
+    }
+
+
+    //tabu search
     std::ofstream out("wynik.txt");
     out.setf(std::ios::fixed);
     out << std::setprecision(5);
