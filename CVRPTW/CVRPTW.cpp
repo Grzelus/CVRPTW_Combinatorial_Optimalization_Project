@@ -181,6 +181,7 @@ int main(int argc, char** argv) {
     int start_time=time(NULL);
     std::vector<Move> Tabu;
     std::vector<Route> best_solution = routes;
+    double best_cost= total_cost;
     std::vector<Route> actual_solution = routes;
     //maksymalnie 5 min wykonywania
     while(time(NULL)-start_time<300){
@@ -201,9 +202,14 @@ int main(int argc, char** argv) {
                             list_of_moves.push_back(Move("swap",i, route1,j,route2, cost));
                         }
                         routes_for_tests=actual_solution;
-                            //insertion
-                            routes_for_tests[route1].sequence.erase(routes_for_tests.begin() + i);
-                            routes_for_tests[route1].sequence.insert(routes_for_tests.begin() + i);
+
+                        //insertion move
+                        routes_for_tests[route1].sequence.erase(routes_for_tests.begin() + i);
+                        routes_for_tests[route1].sequence.insert(routes_for_tests.begin() + i);
+                        bool x, int cost = route_feasible_and_cost(routes_for_tests );// co dokladnie ta funckja robi????
+                        if(x){
+                            list_of_moves.push_back(Move("swap",i, route1,j,route2, cost));
+                        }
 
                     }
                 }
