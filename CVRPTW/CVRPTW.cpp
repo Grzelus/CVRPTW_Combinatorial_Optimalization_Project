@@ -1,4 +1,4 @@
-#include <iostream>
+﻿#include <iostream>
 #include <fstream>
 #include <string>
 #include <vector>
@@ -29,34 +29,48 @@ double euclidean_distance(const Customer& a, const Customer& b) {
     return std::sqrt((a.x - b.x) * (a.x - b.x) + (a.y - b.y) * (a.y - b.y));
 }
 
-std::pair<bool, double> route_feasible_and_cost(
-    const std::vector<Customer>& customers,
-    int depot_index,
-    const std::vector<std::vector<double>>& distance,
-    const std::vector<int>& route_indexes) {
-
+std::pair<bool, double> route_feasible_and_cost(const std::vector<Customer>& customers, int depot_index, const std::vector<std::vector<double>>& distance, const std::vector<int>& route_indexes) {
     double time = 0.0;
     double cost = 0.0;
     int prev = depot_index;
+    const Customer& depot = customers[depot_index];
 
     for (int index : route_indexes) {
+        const Customer& customer = customers[index];
         double travel = distance[prev][index];
-        cost += travel;
-        time += travel;
-        double ready = customers[index].ready;
-        double due = customers[index].due;
-        double service = customers[index].service;
 
-        if (time < ready) {
-            cost += (ready - time);
-            time = ready;
+        cost += travel;
+        time = time + travel;
+
+        //pracownik był za wcześnie
+        double wait_time = 0.0;
+        if (time < customer.ready) {
+            wait_time = customer.ready - time;
+            time = customer.ready;
         }
-        if (time > due) return { false, 0.0 };
-        cost += service;
-        time += service;
+
+        //pracownik nie zdążył
+        if (time > customer.due) {
+            return { false , 0.0 };
+        }
+
+        //Obliczanie czasu i kosztu po wykonanej usłudze
+        cost += wait_time;
+        cost += customer.service;
+        time += customer.service;
+
         prev = index;
     }
-    cost += distance[prev][depot_index];
+
+    //powrót do depotu
+    double travel_to_depot = distance[prev][depot_index];
+    cost += travel_to_depot;
+    time += travel_to_depot;
+
+    if (time > depot.due) {
+        return { false, 0.0 };
+    }
+
     return { true, cost };
 }
 
