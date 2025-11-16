@@ -124,6 +124,7 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClCompile Include="CVRPTW.cpp" />
+    <ClCompile Include="remake_greedy.cpp" />
   </ItemGroup>
   <ItemGroup>
     <Text Include="index.txt" />
