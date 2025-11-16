@@ -70,7 +70,7 @@ std::pair<bool, double> route_feasible_and_cost(const std::vector<Customer>& cus
 }
 
 int main(int argc, char** argv) {
-	std::string file_name = (argc > 1) ? argv[1] : "index.txt";
+	std::string file_name = (argc > 1) ? argv[1] : "index2.txt";
 	std::ifstream file(file_name);
 	if (!file) {
 		std::cerr << "Error opening file.\n";

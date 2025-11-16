@@ -36,6 +36,7 @@ class Move{
         std::string type;
         int a,b, route1 ,route2;
         double cost;
+        //move constuctors
         Move() = default;
         Move(std::string o_type, int x, int routex, int y,int routey, double o_cost): type(o_type), a(x),b(y), route1(routex),route2(routey), cost(o_cost) {};
 
@@ -48,6 +49,7 @@ class Move{
             route2==other.route2;
         }
 
+        //metoda haszująca ruchy do ich szybszego znajdywania
         size_t hash() const {
         return std::hash<std::string>()(type) ^ std::hash<int>()(a) ^ std::hash<int>()(b) ^std::hash<int>()(route1) ^ std::hash<int>()(route2);
 }
@@ -56,12 +58,13 @@ class Move{
 struct MoveHasher{
     size_t operator()(const Move& m) const {return m.hash();}
 };
+
 //pod sortowanie najlepszych ruchów
 bool comparing_moves(Move a, Move b){
     return a.cost<b.cost;
 }
 
-//end tabu search
+
 double euclidean_distance(const Customer& a, const Customer& b) {
     return std::sqrt((a.x - b.x) * (a.x - b.x) + (a.y - b.y) * (a.y - b.y));
 }
@@ -122,7 +125,6 @@ void printIntVector(std::vector<int> numb){
     }
     std::cout<<std::endl;
 }
-
 void printSolution(std::vector<Route> solution){
     for(auto x : solution){
         printIntVector(x.sequence);
@@ -135,19 +137,18 @@ double totalCostCount(std::vector<Route>routes,std::vector<Customer>customers, s
     double total_cost = 0.0;
     for (auto& r : routes) {
         auto fc = route_feasible_and_cost(customers, 0, distances, r.sequence);
-        if (!fc.first) {
-            return 0;
-        }
         total_cost += fc.second;
     }
     return total_cost;
 }
 
+//creating a key for a route - string from sequance indexes 
 std::string get_key_route(const std::vector<int>& seq) {
     std::string key;
-    for (int x : seq) key += std::to_string(x) + ",";
+    for (int x : seq) {key += std::to_string(x) + ",";}
     return key;
 }
+//caching function
 std::pair<bool, double> route_feasible_and_cost_cached(
     const std::vector<Customer>& customers, int depot_index,
     const std::vector<std::vector<double>>& distance, const std::vector<int>& route_indexes,std::unordered_map<std::string,std::pair<bool,double>>& cost_cache) {
@@ -159,11 +160,11 @@ std::pair<bool, double> route_feasible_and_cost_cached(
 }
 
 
-// Zastąp wywołania route_feasible_and_cost na route_feasible_and_cost_cached.
-// Wyczyść cache na początku każdej iteracji while: cost_cache.clear();
 
 int main(int argc, char** argv) {
-    std::string file_name = (argc > 1) ? argv[1] : "index2.txt";
+    int start_time=time(NULL);
+
+    std::string file_name = (argc > 1) ? argv[1] : "index.txt";
     std::ifstream file(file_name);
     if (!file) {
         std::cerr << "Error opening file.\n";
@@ -276,12 +277,9 @@ int main(int argc, char** argv) {
     std::vector<Route> actual_solution = routes;
     std::unordered_map<std::string, std::pair<bool,double>> cost_cache;
     double act_cost=best_cost;        
+    
     //maksymalnie 5 min wykonywania
-    int start_time=time(NULL);
-
-
-
-    while((time(NULL)-start_time)<300){
+     while((time(NULL)-start_time)<300){
         std::cout<<time(NULL)-start_time<<std::endl;
         std::vector<Route>routes_for_tests = actual_solution;
         std::vector<Move>list_of_moves;
@@ -302,21 +300,18 @@ int main(int argc, char** argv) {
                  
                     for (int j=0; j<actual_solution[route2].sequence.size() && !moves_limit;j++)
                     {   
-                        
-                        //swap move
-
-                       
                        //   printIntVector(routes_for_tests[route1].sequence);
                      //   printIntVector(routes_for_tests[route2].sequence);
                      //   std::cout<<i<<" "<<j<<std::endl;
                     //    std::cout<<"gora"<<std::endl;
 
+                    //swap move
                         std::swap(routes_for_tests[route1].sequence[i],routes_for_tests[route2].sequence[j]);
                        
                       //  printIntVector(routes_for_tests[route1].sequence);
                        // printIntVector(routes_for_tests[route2].sequence);
-
                       //  std::cout<<i<<" "<<j<<std::endl;
+
                         auto change_effect1= route_feasible_and_cost_cached (customers,0, distances, routes_for_tests[route1].sequence, cost_cache);   //za mało argumentów
                         auto change_effect2= route_feasible_and_cost_cached(customers,0, distances, routes_for_tests[route2].sequence, cost_cache);
                         auto original_cost1= route_feasible_and_cost_cached(customers,0, distances, actual_solution[route1].sequence, cost_cache);
@@ -344,8 +339,6 @@ int main(int argc, char** argv) {
                         }
                         std::swap(routes_for_tests[route1].sequence[i],routes_for_tests[route2].sequence[j]);
                         //insertion move
-                        
-                        //delete erase the client from one route1 and add to route2
                         int client_removed=actual_solution[route1].sequence[i]; 
                         routes_for_tests[route2].sequence.insert(routes_for_tests[route2].sequence.begin() + j, client_removed);
                         routes_for_tests[route1].sequence.erase(routes_for_tests[route1].sequence.begin() + i);
@@ -387,7 +380,7 @@ int main(int argc, char** argv) {
                 }
             }        
         }
-        //if move wasn't found 
+        
 
         // chosing the best move 
         sort(list_of_moves.begin(), list_of_moves.end(), comparing_moves);
@@ -395,7 +388,7 @@ int main(int argc, char** argv) {
             list_of_moves.resize(1000);
         }
       //  printListOfMoves(list_of_moves);
-        //gdy nie ma ruchow
+        //if move wasn't found 
         if(list_of_moves.empty()){ 
             break;
         }
@@ -416,10 +409,11 @@ int main(int argc, char** argv) {
             chosen = list_of_moves[0];
             Tabu.insert(chosen);
             if (Tabu.size() > 100) Tabu.erase(Tabu.begin());
-        } else {
-            break;
+            } 
+            else {
+                break;
+            }
         }
-}
 
 
 
@@ -454,7 +448,6 @@ int main(int argc, char** argv) {
             best_solution=actual_solution;
             best_cost=act_cost;
         }
-        
       //  printSolution(actual_solution);
        // printSolution(best_solution);
      //  std::cout<<totalCostCount(routes,customers,distances)<<std::endl;
@@ -468,8 +461,8 @@ int main(int argc, char** argv) {
     std::ofstream out("wynik.txt");
     out.setf(std::ios::fixed);
     out << std::setprecision(5);
-    out << routes.size() << " " << total_cost << "\n";
-    for (auto& r : routes) {
+    out << best_solution.size() << " " << total_cost << "\n";
+    for (auto& r : best_solution) {
         for (size_t k = 0; k < r.sequence.size(); k++) {
             if (k) out << " ";
             out << customers[r.sequence[k]].id;
