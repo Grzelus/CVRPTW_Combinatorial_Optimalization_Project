@@ -8,6 +8,7 @@
 #include <iomanip>
 #include <unordered_map>
 #include <unordered_set>
+#include <ctime>
 
 struct Customer {
     int id;
@@ -164,7 +165,7 @@ std::pair<bool, double> route_feasible_and_cost_cached(
 int main(int argc, char** argv) {
     int start_time=time(NULL);
 
-    std::string file_name = (argc > 1) ? argv[1] : "index.txt";
+    std::string file_name = (argc > 1) ? argv[1] : "m2kvrptw-0.txt";
     std::ifstream file(file_name);
     if (!file) {
         std::cerr << "Error opening file.\n";
@@ -412,7 +413,7 @@ int main(int argc, char** argv) {
             } 
             else {
                 break;
-            }
+            } 
         }
 
 
