@@ -9,6 +9,7 @@
 #include <unordered_map>
 #include <unordered_set>
 #include <ctime>
+#include <limits>
 
 struct Customer {
     int id;
@@ -133,6 +134,13 @@ void printSolution(std::vector<Route> solution){
     std::cout<<std::endl;
 }
 
+// Remove any routes that have empty sequence from a solution
+void remove_empty_routes(std::vector<Route>& solution) {
+    solution.erase(std::remove_if(solution.begin(), solution.end(), [](const Route& r) {
+        return r.sequence.empty();
+    }), solution.end());
+}
+
 //counting cost of specyfic solution
 double totalCostCount(std::vector<Route>routes,std::vector<Customer>customers, std::vector<std::vector<double>> distances){
     double total_cost = 0.0;
@@ -174,7 +182,7 @@ int main(int argc, char** argv) {
     // getting data
     double amount, capacity;
     std::string skip_line;
-    for (int i = 0; i < 2; i++) std::getline(file, skip_line);
+    for (int i = 0; i < 4; i++) std::getline(file, skip_line);
     file >> amount >> capacity;
     for (int i = 0; i < 5; i++) std::getline(file, skip_line);
 
@@ -271,23 +279,34 @@ int main(int argc, char** argv) {
     }
 
     //tabu search
+    //zmienne do kontrolowania tabu search
+    constexpr int TABU_LIMIT = 50;
+    constexpr int MAX_MOVES=2000;
+    constexpr int MAX_REPEAT = 50;
+    constexpr double REPEAT_EPS = 1e-6;
+
     
     std::unordered_set<Move,MoveHasher> Tabu;
     std::vector<Route> best_solution = routes; 
     double best_cost= total_cost;
     std::vector<Route> actual_solution = routes;
     std::unordered_map<std::string, std::pair<bool,double>> cost_cache;
-    double act_cost=best_cost;        
+
+
+    //zmienne do kontrolowania powtórzeń
+    double act_cost = best_cost;
+    int repeat_counter = 0;
+    double previous_cost = act_cost;
     
     //maksymalnie 5 min wykonywania
-     while((time(NULL)-start_time)<300){
+     while((time(NULL)-start_time)<299){
         std::cout<<time(NULL)-start_time<<std::endl;
         std::vector<Route>routes_for_tests = actual_solution;
         std::vector<Move>list_of_moves;
      //oganicznie długości listy ruchów
-        const int MAX_MOVES=2000;
         int moves_counter=0;
         bool moves_limit=false;
+        
         //generating list of possible moves
         for (int route1=0;route1<actual_solution.size() && !moves_limit;route1++)
         { 
@@ -400,7 +419,7 @@ int main(int argc, char** argv) {
                 found=true;
                 Tabu.insert(i); 
                 chosen=i;
-                if (Tabu.size() > 100) Tabu.erase(Tabu.begin()); 
+                if (Tabu.size() > TABU_LIMIT) Tabu.erase(Tabu.begin()); 
                 break;
             }
         }
@@ -409,13 +428,12 @@ int main(int argc, char** argv) {
             if (!list_of_moves.empty()) {
             chosen = list_of_moves[0];
             Tabu.insert(chosen);
-            if (Tabu.size() > 100) Tabu.erase(Tabu.begin());
+            if (Tabu.size() > TABU_LIMIT) Tabu.erase(Tabu.begin());
             } 
             else {
                 break;
             } 
         }
-
 
 
       //  std::cout<< chosen.route1<<" "<<chosen.a<<" "<<chosen.route2<<" "<<chosen.b<<std::endl;
@@ -443,6 +461,8 @@ int main(int argc, char** argv) {
             actual_solution[chosen.route1].load=actual_solution[chosen.route1].load-client_demand;
             actual_solution[chosen.route2].load=actual_solution[chosen.route2].load+client_demand;
         }
+        remove_empty_routes(actual_solution);
+
 
         act_cost=totalCostCount(actual_solution,customers,distances);
         if(act_cost<best_cost){ 
@@ -456,13 +476,24 @@ int main(int argc, char** argv) {
         list_of_moves.clear();
         routes_for_tests.clear();
         cost_cache.clear();
+        if (std::fabs(previous_cost - best_cost) < REPEAT_EPS) {
+            repeat_counter++;
+            if (repeat_counter >= MAX_REPEAT) {
+                break;
+            }
+        } else {
+            repeat_counter = 0;
+            previous_cost = best_cost;
+        }
     }
     //tabu search end
+    // remove any empty routes
+    remove_empty_routes(best_solution);
 
     std::ofstream out("wynik.txt");
     out.setf(std::ios::fixed);
     out << std::setprecision(5);
-    out << best_solution.size() << " " << total_cost << "\n";
+    out << best_solution.size() << " " << totalCostCount(best_solution, customers, distances) << "\n";
     for (auto& r : best_solution) {
         for (size_t k = 0; k < r.sequence.size(); k++) {
             if (k) out << " ";
@@ -471,6 +502,8 @@ int main(int argc, char** argv) {
         out << "\n";
     }
     out.close();
+    std::cout<<"Koszt całkowity najlepszego rozwiązania: "<<best_cost<<std::endl;
+    std:: cout<<"Czas wykonania algorytmu: "<<(time(NULL)-start_time)<<std::endl;
 
     return 0;
 }
