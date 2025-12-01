@@ -150,7 +150,7 @@ std::pair<bool, double> route_feasible_and_cost_cached(
 int main(int argc, char** argv) {
     int start_time = time(NULL);
 
-    std::string file_name = (argc > 1) ? argv[1] : "m2kvrptw-0.txt";
+    std::string file_name = (argc > 1) ? argv[1] : "cvrptw4.txt";
     std::ifstream file(file_name);
     if (!file) {
         std::cerr << "Error opening file.\n";
@@ -202,6 +202,7 @@ int main(int argc, char** argv) {
     // Heurystyka zachłanna
 
     std::cout << "Starting Greedy Heuristic construction..." << std::endl;
+    auto greedy_start = std::chrono::high_resolution_clock::now();
     std::vector<Route> routes;
     std::vector<bool> visited(n, false);
     visited[depot_index] = true;
@@ -306,6 +307,9 @@ int main(int argc, char** argv) {
         route.cost = feasible_and_cost.second;
         total_cost += route.cost;
     }
+    auto greedy_end = std::chrono::high_resolution_clock::now();
+	auto greedy_duration_ns = std::chrono::duration_cast<std::chrono::microseconds>(greedy_end - greedy_start);
+	std::cout << "greedy, nanoseconds: " << greedy_duration_ns.count() << "\n";
 
     std::cout << "Greedy initial solution found. Routes: " << routes.size() << ", Cost: " << total_cost << std::endl;
 
@@ -335,6 +339,8 @@ int main(int argc, char** argv) {
     double previous_cost = act_cost;
 
     std::cout << "Starting Tabu Search..." << std::endl;
+
+    auto tabu_start = std::chrono::high_resolution_clock::now();
 
     // maksymalnie 5 min wykonywania
     while ((time(NULL) - start_time) < 299) {
@@ -525,6 +531,10 @@ int main(int argc, char** argv) {
             previous_cost = best_cost;
         }
     }
+
+    auto tabu_end = std::chrono::high_resolution_clock::now();
+	auto tabu_duration_ns = std::chrono::duration_cast<std::chrono::microseconds>(tabu_end - tabu_start);
+	std::cout << "tabu, nanoseconds: " << tabu_duration_ns.count() << "\n";
     // tabu search end
     // remove any empty routes
     remove_empty_routes(best_solution);
